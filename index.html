@@ -1858,18 +1858,21 @@ setQuizLevel('7e'); currentExamLevel='7e'; renderLevelTabs(); renderChapters(); 
 </script>
 <script>
 (function(){
-  var button=document.getElementById('install-app'),pending=null;
+  var button=document.getElementById('install-app'),pending=null,installedKey='bigmath_install_done';
   if(!button)return;
   function standalone(){return window.matchMedia('(display-mode: standalone)').matches||window.navigator.standalone===true}
+  function hideInstallButton(){button.hidden=true;try{localStorage.setItem(installedKey,'1')}catch(e){}}
+  try{if(localStorage.getItem(installedKey)==='1'||standalone())hideInstallButton()}catch(e){if(standalone())hideInstallButton()}
   function iosSafari(){return /iphone|ipad|ipod/i.test(navigator.userAgent)&&/safari/i.test(navigator.userAgent)&&!/crios|fxios|edgios/i.test(navigator.userAgent)}
   button.addEventListener('click',async function(){
-    if(standalone()){alert('BIG-Infos Math est déjà installé sur cet appareil.');return}
-    if(pending){pending.prompt();try{await pending.userChoice}catch(e){}pending=null;return}
+    if(standalone()){hideInstallButton();return}
+    if(pending){pending.prompt();try{var choice=await pending.userChoice;if(choice&&choice.outcome==='accepted')hideInstallButton()}catch(e){}pending=null;return}
     if(iosSafari())alert('Pour installer BIG-Infos Math sur iPhone ou iPad : touche Partager, puis « Sur l’écran d’accueil ».');
     else alert('Pour installer BIG-Infos Math : ouvre le menu du navigateur, puis choisis « Installer l’application » ou « Ajouter à l’écran d’accueil ».');
+    hideInstallButton();
   });
   window.addEventListener('beforeinstallprompt',function(e){e.preventDefault();pending=e});
-  window.addEventListener('appinstalled',function(){button.textContent='✅ Application installée';pending=null});
+  window.addEventListener('appinstalled',function(){pending=null;hideInstallButton()});
   if('serviceWorker' in navigator&&/^https?:$/.test(location.protocol)){
     window.addEventListener('load',function(){navigator.serviceWorker.register('./sw.js').catch(function(err){console.warn('Service worker non disponible',err)})});
   }
