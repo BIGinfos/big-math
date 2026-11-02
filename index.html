@@ -4,6 +4,10 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
 <meta name="theme-color" content="#3157e8">
+<link rel="manifest" href="./manifest.webmanifest">
+<link rel="apple-touch-icon" href="./apple-touch-icon.png">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="BIG Math">
 <meta name="version" content="4.4 (2026-11-02)">
 <script>try{if(localStorage.getItem('bigmath_activation_v2')||document.cookie.indexOf('bigmath_activation_v2=')>-1)document.documentElement.className='pre-ok'}catch(e){}</script>
 <style>.pre-ok #access-gate{display:none!important}</style>
@@ -67,11 +71,12 @@ body.gated{overflow:hidden}
 .access-card h1{font-size:21px;margin-bottom:8px}.access-card p{color:var(--muted);font-size:13px;line-height:1.55;margin-bottom:14px}
 .access-card input{margin:0 0 9px;text-align:center;letter-spacing:.08em;font-size:18px}.access-card .btn{width:100%}
 #access-error{min-height:18px;color:var(--bad);font-size:13px;margin-top:8px}
+.install-app{margin-top:10px;padding:9px 13px;font-size:13px}
 </style>
 </head>
 <body>
 <div id="access-gate" role="dialog" aria-modal="true" aria-labelledby="access-title"><form class="access-card" id="access-form" autocomplete="off"><div class="access-logo">BIG-Infos Math 🧮</div><h1 id="access-title">Code d’utilisation</h1><p>Entre le code pour ouvrir l’application.</p><input id="access-code" type="password" inputmode="text" autocomplete="off" autocapitalize="off" autocorrect="off" spellcheck="false" placeholder="Code" aria-label="Code d’utilisation"><button class="btn" id="access-submit" type="submit">Ouvrir</button><div id="access-error" role="alert" aria-live="polite"></div></form></div><div class="app">
-<header><div class="logo">BIG-Infos <span>Math</span> 🧮</div><div class="tag">Comprendre · Résoudre · Progresser</div></header>
+<header><div class="logo">BIG-Infos <span>Math</span> 🧮</div><div class="tag">Comprendre · Résoudre · Progresser</div><button class="btn install-app" id="install-app" type="button">📲 Installer l’application</button></header>
 
 <nav id="nav">
 <button class="active" data-page="home">🏠 Accueil</button>
@@ -1850,6 +1855,25 @@ renderSubjects();
 setFormulaLevel('7e'); setSolveLevel('7e'); setExoClass('7e');
 document.getElementById('exambox').innerHTML=`<div class="score"><div style="font-size:45px">🎓</div><h3>Prêt pour l’épreuve ?</h3><p class="muted">12 questions tirées au hasard. Corrige ton travail à la fin.</p><button class="btn" onclick="startExam()">Commencer</button></div>`;
 setQuizLevel('7e'); currentExamLevel='7e'; renderLevelTabs(); renderChapters(); updateStats();
+</script>
+<script>
+(function(){
+  var button=document.getElementById('install-app'),pending=null;
+  if(!button)return;
+  function standalone(){return window.matchMedia('(display-mode: standalone)').matches||window.navigator.standalone===true}
+  function iosSafari(){return /iphone|ipad|ipod/i.test(navigator.userAgent)&&/safari/i.test(navigator.userAgent)&&!/crios|fxios|edgios/i.test(navigator.userAgent)}
+  button.addEventListener('click',async function(){
+    if(standalone()){alert('BIG-Infos Math est déjà installé sur cet appareil.');return}
+    if(pending){pending.prompt();try{await pending.userChoice}catch(e){}pending=null;return}
+    if(iosSafari())alert('Pour installer BIG-Infos Math sur iPhone ou iPad : touche Partager, puis « Sur l’écran d’accueil ».');
+    else alert('Pour installer BIG-Infos Math : ouvre le menu du navigateur, puis choisis « Installer l’application » ou « Ajouter à l’écran d’accueil ».');
+  });
+  window.addEventListener('beforeinstallprompt',function(e){e.preventDefault();pending=e});
+  window.addEventListener('appinstalled',function(){button.textContent='✅ Application installée';pending=null});
+  if('serviceWorker' in navigator&&/^https?:$/.test(location.protocol)){
+    window.addEventListener('load',function(){navigator.serviceWorker.register('./sw.js').catch(function(err){console.warn('Service worker non disponible',err)})});
+  }
+})();
 </script>
 </body>
 </html>
