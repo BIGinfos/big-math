@@ -365,7 +365,24 @@ const R=(a,b)=>Math.floor(Math.random()*(b-a+1))+a,pick=a=>a[R(0,a.length-1)],sh
 const sg=n=>n<0?'−'+(-n):''+n,par=n=>n<0?'('+sg(n)+')':''+n,sgn=n=>n<0?'− '+(-n):'+ '+n,LV3=['','FACILE','MOYEN','DIFFICILE'];
 function norm(s){return String(s).toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g,'').replace(/[−–—]/g,'-').replace(/\s+et\s+/g,',').replace(/\s+/g,'').replace(/²/g,'^2').replace(/³/g,'^3').replace(/[*()]/g,'').replace(/racine|rac/g,'√').replace(/≥/g,'>=').replace(/≤/g,'<=').replace(/;/g,',').replace(/\b[a-z]=/g,'')}
 function numOf(s){s=norm(s).replace(/(cm|km|m|h|fcfa|cfa|f|°|%|\^2|\^3)+$/,'').replace(',','.');let m=s.match(/^(-?\d*\.?\d+)\/(-?\d*\.?\d+)$/);return m?m[1]/m[2]:/^-?\d*\.?\d+$/.test(s)?+s:NaN}
-function isOk(e,raw){let n=norm(raw);if(!n)return false;let v=numOf(raw);if(e.acc){if(e.acc.some(a=>norm(a)===n))return true;return !isNaN(v)&&e.acc.some(a=>{let expected=numOf(a);return !isNaN(expected)&&Math.abs(v-expected)<=1e-4})}return !isNaN(v)&&Math.abs(v-e.ans)<=(e.tol||1e-4)}
+function isOk(e,raw){
+ let n=norm(raw);if(!n)return false;
+ // Les exercices de comparaison acceptent le symbole seul ou l'expression complète.
+ if(e&&e.show&&['<','>','='].includes(e.show)){
+  const number='(?:[−-]?\\s*\\d{1,3}(?:[ \\u00a0]\\d{3})+(?:[,.]\\d+)?|[−-]?\\s*\\d+(?:[,.]\\d+)?)';
+  const clean=s=>String(s).replace(/<[^>]*>/g,'').replace(/&lt;/g,'<').replace(/&gt;/g,'>').replace(/&nbsp;/g,' ').replace(/−/g,'-');
+  const value=s=>Number(String(s).replace(/[ \\u00a0]/g,'').replace(',','.'));
+  const expected=clean(e.q||'').match(new RegExp(number+'\\s*(?:et|;|,)\\s*('+number+')','i'));
+  const entered=clean(raw).match(new RegExp('^\\s*('+number+')\\s*([<>=])\\s*('+number+')\\s*$'));
+  if(entered){
+   const left=value(entered[1]),right=value(entered[3]);
+   const sameOperands=expected&&Math.abs(left-value(expected[0].match(new RegExp('^'+number))[0]))<1e-9&&Math.abs(right-value(expected[1]))<1e-9;
+   const relation=left<right?'<':left>right?'>':'=';
+   if(sameOperands&&entered[2]===relation&&relation===e.show)return true;
+  }
+ }
+ let v=numOf(raw);if(e.acc){if(e.acc.some(a=>norm(a)===n))return true;return !isNaN(v)&&e.acc.some(a=>{let expected=numOf(a);return !isNaN(expected)&&Math.abs(v-expected)<=1e-4})}return !isNaN(v)&&Math.abs(v-e.ans)<=(e.tol||1e-4)
+}
 const GEN={
 relative:['Nombres relatifs',L=>{let a=R(-9,9)||3,b=R(-9,9)||-4,c=R(-9,9)||2;
  if(L==1){let s=pick(['+','−']),ans=s=='+'?a+b:a-b;return{q:`Calculer : ${par(a)} ${s} ${par(b)}`,ans,sol:`${par(a)} ${s} ${par(b)} = ${sg(ans)}.`}}
