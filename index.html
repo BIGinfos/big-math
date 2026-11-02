@@ -4,7 +4,9 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
 <meta name="theme-color" content="#3157e8">
-<meta name="version" content="4.3 (2026-10-07)">
+<meta name="version" content="4.4 (2026-11-02)">
+<script>try{if(localStorage.getItem('bigmath_activation_v2')||document.cookie.indexOf('bigmath_activation_v2=')>-1)document.documentElement.className='pre-ok'}catch(e){}</script>
+<style>.pre-ok #access-gate{display:none!important}</style>
 <title>BIG-Infos Math — Mathématiques fondamentales</title>
 <style>
 *{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent}
@@ -65,22 +67,6 @@ body.gated{overflow:hidden}
 .access-card h1{font-size:21px;margin-bottom:8px}.access-card p{color:var(--muted);font-size:13px;line-height:1.55;margin-bottom:14px}
 .access-card input{margin:0 0 9px;text-align:center;letter-spacing:.08em;font-size:18px}.access-card .btn{width:100%}
 #access-error{min-height:18px;color:var(--bad);font-size:13px;margin-top:8px}
-</style>
-<link rel="manifest" href="manifest.webmanifest">
-<link rel="icon" type="image/png" href="favicon.png">
-<link rel="apple-touch-icon" href="apple-touch-icon.png">
-<meta name="apple-mobile-web-app-capable" content="yes">
-<meta name="mobile-web-app-capable" content="yes">
-<meta name="apple-mobile-web-app-title" content="BIG Math">
-<meta name="apple-mobile-web-app-status-bar-style" content="default">
-<meta name="application-name" content="BIG-Infos Math">
-<style>
-#pwaInstall{position:fixed;left:50%;bottom:16px;transform:translateX(-50%) translateY(140%);z-index:9999;display:flex;align-items:center;gap:10px;max-width:calc(100% - 24px);background:#fff;color:#172033;border:1px solid #dfe4ef;border-radius:16px;padding:10px 10px 10px 14px;box-shadow:0 12px 34px #17203326;font:600 14px system-ui,-apple-system,Segoe UI,Roboto,sans-serif;transition:transform .35s cubic-bezier(.2,.9,.3,1.2)}
-#pwaInstall.show{transform:translateX(-50%) translateY(0)}
-#pwaInstall img{width:36px;height:36px;border-radius:9px}
-#pwaInstall .t{flex:1;line-height:1.25}#pwaInstall .t small{display:block;color:#69738c;font-weight:500;font-size:12px}
-#pwaInstall button{border:0;border-radius:11px;padding:10px 14px;font-weight:800;background:#3157e8;color:#fff;cursor:pointer;white-space:nowrap}
-#pwaInstall button.x{background:transparent;color:#69738c;padding:10px 8px}
 </style>
 </head>
 <body>
@@ -224,18 +210,31 @@ body.gated{overflow:hidden}
 <h2>📐 Formulaire essentiel</h2><div class="card" style="margin-bottom:10px"><label><b>🎓 Niveau</b></label><select id="formula-level" onchange="setFormulaLevel(this.value)"><option value="7e">7e année</option><option value="8e">8e année</option><option value="9e">9e année</option></select><p class="muted">Formules et propriétés sélectionnées selon les leçons du programme.</p></div><div class="grid" id="formula-grid"></div>
 </section>
 
-<footer>BIG-Infos Math v4.3 · Fonctionne hors connexion (l’import PDF/photo nécessite Internet) · © BIG-Infos</footer>
+<footer>BIG-Infos Math v4.4 · Connexion nécessaire uniquement à l’ouverture, ensuite tout fonctionne hors connexion (seul l’import PDF/photo nécessite Internet) · © BIG-Infos</footer>
 </div>
 
 <script>
 (function(){
-  var CODE='1122@';
+  var CODE='1212@', KEY='bigmath_activation_v2';
   var gate=document.getElementById('access-gate'),form=document.getElementById('access-form'),input=document.getElementById('access-code'),error=document.getElementById('access-error');
   function clean(v){return String(v||'').normalize('NFKC').replace(/[\s\u00a0\u200b-\u200d\ufeff]/g,'')}
+  // Empreinte simple : le code en clair n'est pas stocké sur le téléphone
+  function stamp(c){var h=5381,t='BIGM|'+c;for(var i=0;i<t.length;i++)h=((h<<5)+h+t.charCodeAt(i))>>>0;return 'ok'+h.toString(36)}
+  function isActivated(){
+    try{if(localStorage.getItem(KEY)===stamp(CODE))return true}catch(e){}
+    try{if(document.cookie.indexOf(KEY+'='+stamp(CODE))>-1)return true}catch(e){}
+    return false;
+  }
+  function remember(){
+    try{localStorage.setItem(KEY,stamp(CODE))}catch(e){}
+    try{document.cookie=KEY+'='+stamp(CODE)+';max-age=315360000;path=/;SameSite=Lax'}catch(e){}
+  }
+  function open(){gate.hidden=true;document.body.classList.remove('gated')}
+  if(isActivated()){open();return}          // déjà activé : plus aucune demande de code
   document.body.classList.add('gated');
   form.addEventListener('submit',function(e){
     e.preventDefault();
-    if(clean(input.value)===CODE){gate.hidden=true;document.body.classList.remove('gated');input.value='';error.textContent='';}
+    if(clean(input.value)===CODE){remember();open();input.value='';error.textContent='';}
     else{error.textContent='Code incorrect.';input.value='';input.focus();}
   });
   setTimeout(function(){input.focus()},50);
@@ -848,7 +847,7 @@ function levelMCQs(level,count=20,Ls=[1,2]){
 function coursePool(level){return genLessons(level).map(c=>{const e=makeExercise(c,2);return{course:c,title:c.title,q:e.q,a:ansTxt(e),e}})}
 
 let cur=null,ser=null;
-function nextBtn(){return ser.i>=ser.n?`<div class="score"><div class="big">${ser.ok}/${ser.n}</div><p>Série terminée 🎉</p><button class="btn" onclick="newExercise()">🔄 Nouvelle série</button></div>`:`<button class="btn ok" style="margin-top:8px" onclick="ser.i++;showEx()">Suivant →</button>`}
+function nextBtn(){if(ser&&ser.i>=ser.n)return `<div class="score"><div class="big">${ser.ok}/${ser.n}</div><p>Série terminée 🎉</p><button class="btn" onclick="newExercise()">🔄 Nouvelle série</button></div>`;return `<button class="btn ok" style="margin-top:8px;width:100%" onclick="${ser?'ser.i++;':''}showEx()">Suivant →</button>`}
 
 let qi=0,qs=0,qa=false,QZ=[];
 function resetQuiz(){
@@ -1762,9 +1761,9 @@ function checkEx(){
   const d=getData();d.tot++;cur.tries++;
   if(ok){d.ok++;cur.done=true;if(ser)ser.ok++}
   saveData(d);
-  document.getElementById('exores').innerHTML=ok?`<div class="result">✅ Correct${cur.tries>1?' (au '+cur.tries+'e essai)':''} !</div>${genCorrection(cur)}`+(ser?nextBtn():''):`<div class="result bad">❌ Pas encore${cur.tries>=2?' : regarde la correction si tu bloques':''}. Vérifie ton calcul et réessaie.</div>`;
+  document.getElementById('exores').innerHTML=ok?`<div class="result">✅ Correct${cur.tries>1?' (au '+cur.tries+'e essai)':''} !</div>${genCorrection(cur)}`+nextBtn():`<div class="result bad">❌ Pas encore${cur.tries>=2?' : regarde la correction si tu bloques':''}. Vérifie ton calcul et réessaie.</div>`;
 }
-function showSol(){if(!cur)return;const was=cur.done;cur.done=true;document.getElementById('exores').innerHTML=`<div class="result">💡 Correction détaillée</div>${genCorrection(cur)}`+(ser&&!was?nextBtn():'')}
+function showSol(){if(!cur)return;const was=cur.done;cur.done=true;document.getElementById('exores').innerHTML=`<div class="result">💡 Correction détaillée</div>${genCorrection(cur)}`+(!ser||!was?nextBtn():'')}
 
 function openCourseLesson(id){
   const c=Object.values(LEVEL_COURSES).flat().find(x=>x.id===id);if(!c)return;
@@ -1834,30 +1833,6 @@ renderSubjects();
 setFormulaLevel('7e'); setSolveLevel('7e'); setExoClass('7e');
 document.getElementById('exambox').innerHTML=`<div class="score"><div style="font-size:45px">🎓</div><h3>Prêt pour l’épreuve ?</h3><p class="muted">12 questions tirées au hasard. Corrige ton travail à la fin.</p><button class="btn" onclick="startExam()">Commencer</button></div>`;
 setQuizLevel('7e'); currentExamLevel='7e'; renderLevelTabs(); renderChapters(); updateStats();
-</script>
-<div id="pwaInstall" role="dialog" aria-label="Installer l'application">
-<img src="icon-192.png" alt="">
-<div class="t">Installer BIG-Infos Math<small id="pwaHint">Accès direct depuis l’écran d’accueil, même hors connexion.</small></div>
-<button type="button" id="pwaGo">📲 Installer</button>
-<button type="button" class="x" id="pwaNo" aria-label="Fermer">✕</button>
-</div>
-<script>
-(function(){
-  if('serviceWorker' in navigator && location.protocol!=='file:'){
-    window.addEventListener('load',function(){navigator.serviceWorker.register('sw.js').catch(function(){});});
-  }
-  var box=document.getElementById('pwaInstall'),go=document.getElementById('pwaGo'),no=document.getElementById('pwaNo'),hint=document.getElementById('pwaHint'),ev=null;
-  var standalone=matchMedia('(display-mode: standalone)').matches||navigator.standalone;
-  var dismissed=false;try{dismissed=localStorage.getItem('pwaDismissedMath')==='1'}catch(e){}
-  function show(){if(!standalone&&!dismissed)box.classList.add('show')}
-  function hide(){box.classList.remove('show')}
-  window.addEventListener('beforeinstallprompt',function(e){e.preventDefault();ev=e;setTimeout(show,1500)});
-  go.onclick=function(){if(ev){ev.prompt();ev.userChoice.finally(function(){ev=null;hide()})}else{hide()}};
-  no.onclick=function(){hide();try{localStorage.setItem('pwaDismissedMath','1')}catch(e){}};
-  window.addEventListener('appinstalled',hide);
-  var ios=/iphone|ipad|ipod/i.test(navigator.userAgent)||(navigator.platform==='MacIntel'&&navigator.maxTouchPoints>1);
-  if(ios&&!standalone){hint.textContent='Touche Partager ⎋ puis « Sur l’écran d’accueil ».';go.textContent='OK';setTimeout(show,2000)}
-})();
 </script>
 </body>
 </html>
